@@ -74,36 +74,41 @@ export const Renderer = ({ width, height, data }: RendererProps) => {
 
   useEffect(() => {
     const group = d3.select(svgGRef.current);
-    const allRect = d3.selectAll("rect");
-    console.log("=>.", allRect.data());
+    const brush = d3
+      .brush()
+      .extent([
+        [0, 0],
+        [boundsWidth, boundsHeight],
+      ])
+      .on("start brush end", brushHandler);
 
-    group.call(
-      d3.brush().on("start brush end", ({ selection }) => {
-        const value = [];
-        if (selection) {
-          const [[x0, y0], [x1, y1]] = selection;
+    group.call(brush);
 
-          // value = allRect
-          //   .style("stroke", "gray")
-          //   .filter((d) => {
-          //     return;
-          //     x0 <= x(d["type"]) &&
-          //       x(d["type"]) < x1 &&
-          //       y0 <= y(d["type"]) &&
-          //       y(d["type"]) < y1;
-          //   })
-          //   .style("stroke", "steelblue")
-          //   .data();
-        } else {
-          // allRect.style("stroke", "steelblue");
-        }
+    function brushHandler({ selection }) {
+      const value = [];
+      if (selection) {
+        const [[x0, y0], [x1, y1]] = selection;
 
-        // Inform downstream cells that the selection has changed.
-        // group.property("value", value).dispatch("input");
-      }),
-    );
-  }, [allRects, x, y]);
+        const selectedData = data.filter(
+          (d) =>
+            x0 <= x(String(d.x))! &&
+            x(String(d.x))! < x1 &&
+            y0 <= y(d.y)! &&
+            y(d.y)! < y1,
+        );
+        // console.log("=>>> selected Data", selectedData);
 
+        // onSetInteractionData({ selection: selectedData, bounds: selection });
+      } else {
+        // console.log("=>>> selected Data null");
+        // onSetInteractionData(null);
+      }
+    }
+
+    return () => {
+      group.on(".brush", null); // Remove the brush listener when component unmounts
+    };
+  }, [data, boundsWidth, boundsHeight, x, y]);
   return (
     <svg
       id={"mysvg"}
